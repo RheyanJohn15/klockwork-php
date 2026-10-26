@@ -1,0 +1,48 @@
+{
+    "name": "klockwork/klockwork",
+    "description": "Client for the Klockwork public API",
+    "license": "MIT",
+    "type": "library",
+    "keywords": [
+        "klockwork",
+        "time-tracking",
+        "api-client"
+    ],
+    "homepage": "https://klockwork.org",
+    "authors": [
+        {
+            "name": "Klockwork"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/RheyanJohn15/klockwork-php/issues",
+        "source": "https://github.com/RheyanJohn15/klockwork-php"
+    },
+    "require": {
+        "php": ">=8.2",
+        "ext-curl": "*",
+        "ext-json": "*"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "Klockwork\\": "src/"
+        },
+        "classmap": [
+            "src/Resources"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Klockwork\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": [
+            "@composer validate --strict",
+            "phpunit"
+        ]
+    }
+}
