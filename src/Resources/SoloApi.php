@@ -11,6 +11,8 @@ final class SoloApi
 {
     public readonly SoloClients $clients;
 
+    public readonly SoloPlacements $placements;
+
     public readonly SoloTimer $timer;
 
     public readonly SoloInvoices $invoices;
@@ -44,6 +46,7 @@ final class SoloApi
         };
         $context = new SoloContext($http, $talentOf);
         $this->clients = new SoloClients($context);
+        $this->placements = new SoloPlacements($context);
         $this->timer = new SoloTimer($context);
         $this->invoices = new SoloInvoices($context);
         $this->timesheet = new SoloTimesheet($context);
@@ -183,6 +186,48 @@ final class SoloClients
     }
 }
 
+final class SoloPlacements
+{
+    public function __construct(private readonly SoloContext $context)
+    {
+    }
+
+    /**
+     * Open company placements for the talent in `X-Klockwork-Talent`.
+     *
+     * Each item includes the assignment plus `clientUseDefaults` and
+     * `clientDefaultHourlyRate`. `hourlyRate` is the placement override and may be null.
+     *
+     * @param array<string, mixed>|null $query
+     */
+    public function list(?array $query = null): mixed
+    {
+        ['talentId' => $talentId, 'rest' => $rest] = Subject::splitTalent($query);
+
+        return $this->context->call('GET', $this->context->root . '/placements', $talentId, ['query' => $rest]);
+    }
+
+    /**
+     * Set or clear this talent's own placement bill rate.
+     *
+     * Send `hourlyRate` as a number greater than or equal to zero, or null to clear it.
+     * Clearing requires an enabled client default rate; otherwise the API returns 400.
+     *
+     * @param array{hourlyRate: float|int|null, talentId?: string} $input
+     */
+    public function update(string $id, array $input): mixed
+    {
+        ['talentId' => $talentId, 'rest' => $rest] = Subject::splitTalent($input);
+
+        return $this->context->call(
+            'PATCH',
+            $this->context->root . '/placements/' . Subject::segment($id),
+            $talentId,
+            ['body' => $rest],
+        );
+    }
+}
+
 final class SoloTimer
 {
     public readonly SoloTimerSession $session;
@@ -228,6 +273,9 @@ final class SoloTimerSession
     }
 
     /**
+     * When `orgClientId` is set, or the API auto-resolves a company client, an effective bill
+     * rate is required. Missing rate returns 400. Sessions with no org client still use solo client rates.
+     *
      * @param array<string, mixed> $input
      */
     public function start(array $input): mixed
@@ -335,6 +383,9 @@ final class SoloTimerSessions
     }
 
     /**
+     * Attributing the session to an org client requires an effective bill rate.
+     * Missing rate returns 400. Unlinked sessions still use solo client rates.
+     *
      * @param array<string, mixed> $input
      */
     public function create(array $input): mixed

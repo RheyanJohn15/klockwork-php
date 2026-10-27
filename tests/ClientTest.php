@@ -66,8 +66,9 @@ final class ClientTest extends TestCase
             'displayName' => 'Acme',
             'contactPersonName' => 'Ada',
             'invoiceEmail' => 'ada@acme.test',
-            'hourlyRate' => 100,
             'currency' => 'PHP',
+            'useClientDefaults' => true,
+            'hourlyRate' => 100,
             'hoursPerDay' => 8,
             'shiftStart' => '09:00',
             'shiftEnd' => '18:00',
@@ -79,7 +80,7 @@ final class ClientTest extends TestCase
         $this->assertSame(self::KEY, $this->header($call['headers'], 'x-klockwork-key'));
         $this->assertSame('application/json', $this->header($call['headers'], 'accept'));
         $this->assertSame('application/json', $this->header($call['headers'], 'content-type'));
-        $this->assertSame('klockwork-php/0.1.0', $this->header($call['headers'], 'user-agent'));
+        $this->assertSame('klockwork-php/0.2.0', $this->header($call['headers'], 'user-agent'));
         $this->assertNull($this->header($call['headers'], 'x-klockwork-talent'));
         $this->assertNull($this->header($call['headers'], 'x-klockwork-client'));
         $this->assertIsString($call['body']);

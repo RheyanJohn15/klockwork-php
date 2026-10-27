@@ -68,7 +68,25 @@ final class AgencyClients
     }
 
     /**
-     * @param array<string, mixed> $input
+     * Identity fields are `displayName`, `contactPersonName`, `invoiceEmail`, and `currency`.
+     * `useClientDefaults` is optional and defaults to false. `hourlyRate`, `hoursPerDay`,
+     * `shiftStart`, `shiftEnd`, and `timezone` are nullable, and required only when
+     * `useClientDefaults` is true. When defaults are off, the API clears those columns.
+     *
+     * Bill rates use the client `currency`. They do not fall back to a talent pay rate.
+     *
+     * @param array{
+     *     displayName: string,
+     *     contactPersonName: string,
+     *     invoiceEmail: string,
+     *     currency: string,
+     *     useClientDefaults?: bool,
+     *     hourlyRate?: float|int|null,
+     *     hoursPerDay?: float|int|null,
+     *     shiftStart?: string|null,
+     *     shiftEnd?: string|null,
+     *     timezone?: string|null
+     * } $input
      */
     public function create(array $input): mixed
     {
@@ -81,7 +99,21 @@ final class AgencyClients
     }
 
     /**
-     * @param array<string, mixed> $input
+     * Turning `useClientDefaults` off, or clearing `hourlyRate`, returns 400 when any open
+     * assignment has no rate of its own.
+     *
+     * @param array{
+     *     displayName?: string,
+     *     contactPersonName?: string,
+     *     invoiceEmail?: string,
+     *     currency?: string,
+     *     useClientDefaults?: bool,
+     *     hourlyRate?: float|int|null,
+     *     hoursPerDay?: float|int|null,
+     *     shiftStart?: string|null,
+     *     shiftEnd?: string|null,
+     *     timezone?: string|null
+     * } $input
      */
     public function update(string $id, array $input): mixed
     {
@@ -174,6 +206,9 @@ final class AgencyAssignments
     }
 
     /**
+     * `hourlyRate` is an optional placement bill rate (number >= 0, or null).
+     * Pass `talentId` or a nested `talent`. Currency is the client's currency.
+     *
      * @param array<string, mixed> $input
      */
     public function create(array $input): mixed
@@ -187,7 +222,13 @@ final class AgencyAssignments
     }
 
     /**
-     * @param array<string, mixed> $input
+     * Send `status`, `hourlyRate`, or both. At least one is required.
+     * `hourlyRate` is a number >= 0, or null. Clearing it returns 400 unless the
+     * client has an enabled default rate.
+     *
+     * Responses include `hourlyRate` (`number|null`) and `clientCurrency` when the client is loaded.
+     *
+     * @param array{status?: string, hourlyRate?: float|int|null} $input
      */
     public function update(string $id, array $input): mixed
     {
@@ -212,6 +253,9 @@ final class AgencyTime
     }
 
     /**
+     * When `clientId` is set, the API requires an effective bill rate for that talent and client.
+     * Missing rate returns 400: set a placement rate or enable a client default rate before recording time.
+     *
      * @param array<string, mixed> $input
      */
     public function create(array $input): mixed
@@ -234,6 +278,11 @@ final class AgencyInvoices
     }
 
     /**
+     * Each line is priced from that talent's assignment `hourlyRate`, then the client default
+     * when `useClientDefaults` is true. Mixed rates on one invoice are expected. Currency is
+     * the client currency. An hour with no resolvable rate returns 400 naming the talent and client.
+     * Existing line `unitRateCents` snapshots stay immutable.
+     *
      * @param array<string, mixed> $input
      */
     public function create(array $input): mixed

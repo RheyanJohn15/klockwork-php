@@ -40,6 +40,10 @@ final class RouteCatalog
         $add('agency assignments create', 'POST', '/api/public/agency/assignments', static fn (Klockwork $kw) => $kw->agency->assignments->create($json));
         $add('agency assignments get', 'GET', "/api/public/agency/assignments/{$id}", static fn (Klockwork $kw) => $kw->agency->assignments->get($id));
         $add('agency assignments update', 'PATCH', "/api/public/agency/assignments/{$id}", static fn (Klockwork $kw) => $kw->agency->assignments->update($id, ['status' => 'ended']));
+        $add('agency assignments update rate', 'PATCH', "/api/public/agency/assignments/{$id}", static fn (Klockwork $kw) => $kw->agency->assignments->update($id, [
+            'status' => 'active',
+            'hourlyRate' => 180,
+        ]), '{"status":"active","hourlyRate":180}');
         $add('agency time list', 'GET', '/api/public/agency/time?from=a&to=b', static fn (Klockwork $kw) => $kw->agency->time->list(['from' => 'a', 'to' => 'b']));
         $add('agency time create', 'POST', '/api/public/agency/time', static fn (Klockwork $kw) => $kw->agency->time->create($json));
         $add('agency invoices list', 'GET', '/api/public/agency/invoices', static fn (Klockwork $kw) => $kw->agency->invoices->list());
@@ -96,6 +100,8 @@ final class RouteCatalog
         $add('solo clients update', 'PATCH', "/api/public/solo/clients/{$id}", static fn (Klockwork $kw) => $kw->solo->clients->update($id, $json));
         $add('solo clients remove', 'DELETE', "/api/public/solo/clients/{$id}", static fn (Klockwork $kw) => $kw->solo->clients->remove($id));
         $add('solo clients touch', 'POST', "/api/public/solo/clients/{$id}/touch", static fn (Klockwork $kw) => $kw->solo->clients->touch($id), 'none');
+        $add('solo placements list', 'GET', '/api/public/solo/placements', static fn (Klockwork $kw) => $kw->solo->placements->list());
+        $add('solo placements update', 'PATCH', "/api/public/solo/placements/{$id}", static fn (Klockwork $kw) => $kw->solo->placements->update($id, ['hourlyRate' => null]), '{"hourlyRate":null}');
         $add('solo timer session get', 'GET', '/api/public/solo/timer/session', static fn (Klockwork $kw) => $kw->solo->timer->session->get());
         $add('solo timer session update', 'PATCH', '/api/public/solo/timer/session', static fn (Klockwork $kw) => $kw->solo->timer->session->update($json));
         $add('solo timer session start', 'POST', '/api/public/solo/timer/session/start', static fn (Klockwork $kw) => $kw->solo->timer->session->start(['clientId' => $id]));
