@@ -66,32 +66,9 @@ final class RouteCatalog
         $add('agency client invites get', 'GET', "/api/public/agency/client-invites/{$id}", static fn (Klockwork $kw) => $kw->agency->clientInvites->get($id));
         $add('agency client invites accept', 'POST', "/api/public/agency/client-invites/{$id}", static fn (Klockwork $kw) => $kw->agency->clientInvites->accept($id), 'none');
         $add('agency client invites remove', 'DELETE', "/api/public/agency/client-invites/{$id}", static fn (Klockwork $kw) => $kw->agency->clientInvites->remove($id), 'none');
-        $add('agency partner get', 'GET', '/api/public/agency/partner', static fn (Klockwork $kw) => $kw->agency->partner->get());
-        $add('agency partner request', 'POST', '/api/public/agency/partner/request', static fn (Klockwork $kw) => $kw->agency->partner->request(), 'empty');
-        $add('agency partner customers list', 'GET', '/api/public/agency/partner/customers', static fn (Klockwork $kw) => $kw->agency->partner->customers->list());
-        $add('agency partner customers create', 'POST', '/api/public/agency/partner/customers', static fn (Klockwork $kw) => $kw->agency->partner->customers->create([
-            'companyName' => 'Acme',
-            'invoiceEmail' => 'ada@acme.test',
-        ]));
-        $add('agency partner customers end', 'POST', "/api/public/agency/partner/customers/{$id}/end", static fn (Klockwork $kw) => $kw->agency->partner->customers->end($id), 'none');
-        $add('agency partner customers suspend', 'POST', "/api/public/agency/partner/customers/{$id}/suspend", static fn (Klockwork $kw) => $kw->agency->partner->customers->suspend($id), 'none');
-        $add('agency partner customers restore', 'POST', "/api/public/agency/partner/customers/{$id}/restore", static fn (Klockwork $kw) => $kw->agency->partner->customers->restore($id), 'none');
-        $add('agency partner keys list', 'GET', '/api/public/agency/partner/keys', static fn (Klockwork $kw) => $kw->agency->partner->keys->list());
-        $add('agency partner keys create', 'POST', '/api/public/agency/partner/keys', static fn (Klockwork $kw) => $kw->agency->partner->keys->create([
-            'name' => 'live',
-            'environment' => 'live',
-            'scopes' => ['customers:read'],
-        ]));
-        $add('agency partner keys revoke', 'POST', "/api/public/agency/partner/keys/{$id}/revoke", static fn (Klockwork $kw) => $kw->agency->partner->keys->revoke($id), 'none');
-        $add('agency partner terms', 'GET', '/api/public/agency/partner/terms', static fn (Klockwork $kw) => $kw->agency->partner->terms->get());
-        $add('agency partner report', 'GET', '/api/public/agency/partner/report?periodStart=2026-01-01', static fn (Klockwork $kw) => $kw->agency->partner->report->get(['periodStart' => '2026-01-01']));
-
         $add('partner me', 'GET', '/api/public/partner/me', static fn (Klockwork $kw) => $kw->partner->me());
         $add('partner customers list', 'GET', '/api/public/partner/customers', static fn (Klockwork $kw) => $kw->partner->customers->list());
-        $add('partner customers create', 'POST', '/api/public/partner/customers', static fn (Klockwork $kw) => $kw->partner->customers->create([
-            'companyName' => 'Acme',
-            'invoiceEmail' => 'ada@acme.test',
-        ]));
+        $add('partner customers create', 'POST', '/api/public/partner/customers', static fn (Klockwork $kw) => $kw->partner->customers->create('Acme', 'ada@acme.test'), '{"companyName":"Acme","invoiceEmail":"ada@acme.test"}');
         $add('partner customers end', 'POST', "/api/public/partner/customers/{$id}/end", static fn (Klockwork $kw) => $kw->partner->customers->end($id), 'none');
 
         $add('solo clients list', 'GET', '/api/public/solo/clients', static fn (Klockwork $kw) => $kw->solo->clients->list());

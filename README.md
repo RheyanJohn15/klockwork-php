@@ -2,9 +2,9 @@
 
 PHP client for the [Klockwork](https://klockwork.org) public API. Create an API key in the app, then record time, set placement bill rates, and manage invoices and payouts for agency, solo, company, or partner accounts.
 
-The client sends the key in `X-Klockwork-Key`. Solo calls also send `X-Klockwork-Talent`. Company calls also send `X-Klockwork-Client`. Partner calls send only the key.
+The client sends the key in `X-Klockwork-Key`. Solo calls also send `X-Klockwork-Talent`. Company calls also send `X-Klockwork-Client`. Partner calls send only the key. The API also accepts `Authorization: Bearer kw_…` when the dedicated header is absent; this client always sends `X-Klockwork-Key`.
 
-An agency key and a partner key are different credentials. The API rejects a partner key on agency, solo, and company routes, and it rejects an agency key on partner routes. Partnership administration for an agency key is `$kw->agency->partner`. Customer calls for a partner key are `$kw->partner`.
+An agency key and a partner key are different credentials. Create partner keys in the signed-in partner workspace. Create agency keys in agency settings. Do not pass a partner key to agency, solo, or company methods, and do not pass an agency key to `$kw->partner`. The API returns `401` when the key type does not match the surface. Partnership admin (create or revoke keys, terms, report) is session-only under `/api/org/partner/*` and is not exposed on this package. Identity comes from the hashed key row on the API; this client does not invent JWT helpers.
 
 Production requests go to `https://api.klockwork.org`. Local requests go to `http://localhost:3001`.
 
@@ -38,12 +38,40 @@ $invoices = $company->invoices->list();
 $partner = new Klockwork([
     'apiKey' => getenv('KLOCKWORK_PARTNER_API_KEY'),
 ]);
+$me = $partner->partner->me();
 $customers = $partner->partner->customers->list();
-$partner->partner->customers->create([
-    'companyName' => 'Acme',
-    'invoiceEmail' => 'ada@acme.test',
-]);
+$created = $partner->partner->customers->create('Acme', 'ada@acme.test');
+$partner->partner->customers->end($created->customer->id);
 ```
+
+## Partner public API
+
+`$kw->partner` calls `/api/public/partner/*` with a partner `kw_` key. Scopes are set when the key is created. Missing scope returns `403` `{ "error": "Missing scope" }`.
+
+| Method | Path | Scope |
+| --- | --- | --- |
+| `$kw->partner->me()` | `GET /api/public/partner/me` | `status:read` |
+| `$kw->partner->customers->list()` | `GET /api/public/partner/customers` | `customers:read` |
+| `$kw->partner->customers->create($companyName, $invoiceEmail)` | `POST /api/public/partner/customers` | `customers:write` |
+| `$kw->partner->customers->end($id)` | `POST /api/public/partner/customers/{id}/end` | `customers:write` |
+
+`me()` returns `PartnerMe` (`partnerId`, `status`, `subscriptionExempt`, `orgId`). A successful call always has `status: "active"`.
+
+`customers->list()` returns a list of `PartnerCustomer` (`id`, `companyName`, `invoiceEmail`, `status`, `customerClerkOrgId`, `associatedAt`, `inviteUrl`). `inviteUrl` is present only while the invite is pending.
+
+`customers->create()` returns `PartnerCustomerCreated` (`customer`, `inviteUrl`, `invitationSent`). `customers->end()` returns `PartnerCustomerEnded` (`ok`).
+
+| Status | Typical `error` | When |
+| --- | --- | --- |
+| `401` | `Invalid API key` / `Unauthorized` | Missing, unknown, revoked, or expired key; wrong key type for the surface |
+| `403` | `Missing scope` | Key lacks the route scope |
+| `403` | `Partner is not active` | Partnership is not active |
+| `403` | `Test keys are not accepted in this environment` | Test key against live API |
+| `404` | `Partner not found` / `Customer not found` / `Not found` | Missing row, or blocked public path |
+| `409` | `An invite for this email is already open` | Duplicate open invite |
+| `429` | Rate limit / monthly cap | Partner surface only |
+
+Failed responses throw `Klockwork\KlockworkError` with `status`, `error`, and `details`. Do not log the secret or its hash.
 
 Point the same key at a local backend:
 
@@ -56,7 +84,7 @@ $kw = new Klockwork([
 
 `baseUrl` overrides `environment` when you need another host. You can also set a default `talentId` or `clientId` on the constructor and override either value on a single call.
 
-Requests and responses are JSON arrays with the API's camelCase keys. Failed responses throw `Klockwork\KlockworkError` with `status`, `error`, and `details`.
+Agency, solo, and company requests and responses are JSON arrays with the API's camelCase keys. Partner methods return typed DTOs. Failed responses throw `Klockwork\KlockworkError` with `status`, `error`, and `details`.
 
 ## Company bill rates
 
@@ -109,7 +137,7 @@ $kw->solo->forTalent($talentId)->placements->update($placementId, [
 
 Invoice void methods are named `voidInvoice()` because `void` is reserved in PHP.
 
-Packagist reads the version from a git tag such as `v0.3.0`, not from `composer.json`. The package summary on Packagist comes from the `description` field in `composer.json`. The package name is `klockwork/klockwork`, so the Packagist account that submits it must own the `klockwork` vendor. The user agent is `klockwork-php/` plus `Klockwork\Version::VERSION`.
+Packagist reads the version from a git tag such as `v0.4.0`, not from `composer.json`. The package summary on Packagist comes from the `description` field in `composer.json`. The package name is `klockwork/klockwork`, so the Packagist account that submits it must own the `klockwork` vendor. The user agent is `klockwork-php/` plus `Klockwork\Version::VERSION`.
 
 ## Tests
 

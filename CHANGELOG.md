@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.4.0
+
+Partner public API (`/api/public/partner`).
+
+- `$kw->partner->me()` returns `PartnerMe`.
+- `$kw->partner->customers->list()` returns a list of `PartnerCustomer`.
+- `$kw->partner->customers->create($companyName, $invoiceEmail)` returns `PartnerCustomerCreated`.
+- `$kw->partner->customers->end($id)` returns `PartnerCustomerEnded`.
+- Removed `$kw->agency->partner`. Partnership admin is session-only under `/api/org/partner/*` and those former public agency partner paths return `404`.
+- Partner and agency keys stay separate. A partner key on agency, solo, or company returns `401`. An agency key on partner returns `401`.
+- Documented partner scopes (`status:read`, `customers:read`, `customers:write`) and common `401` / `403` / `409` / `429` errors.
+
 ## 0.3.0
 
 Production requests use `https://api.klockwork.org`. Earlier releases sent them to `https://klockwork.org`.

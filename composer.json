@@ -9,7 +9,8 @@
         "api-client",
         "invoices",
         "placements",
-        "agency"
+        "agency",
+        "partner"
     ],
     "homepage": "https://klockwork.org",
     "authors": [

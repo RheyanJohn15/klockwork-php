@@ -31,8 +31,6 @@ final class AgencyApi
 
     public readonly AgencyClientInvites $clientInvites;
 
-    public readonly AgencyPartner $partner;
-
     public function __construct(HttpClient $http)
     {
         $root = '/api/public/agency';
@@ -47,7 +45,6 @@ final class AgencyApi
         $this->notificationSettings = new AgencyNotificationSettings($http, $root);
         $this->access = new AgencyAccess($http, $root);
         $this->clientInvites = new AgencyClientInvites($http, $root);
-        $this->partner = new AgencyPartner($http, $root);
     }
 }
 
@@ -424,134 +421,5 @@ final class AgencyClientInvites
     public function remove(string $token): mixed
     {
         return $this->http->request('DELETE', $this->root . '/client-invites/' . Subject::segment($token));
-    }
-}
-
-final class AgencyPartner
-{
-    public readonly AgencyPartnerCustomers $customers;
-
-    public readonly AgencyPartnerKeys $keys;
-
-    public readonly AgencyPartnerTerms $terms;
-
-    public readonly AgencyPartnerReport $report;
-
-    public function __construct(
-        private readonly HttpClient $http,
-        private readonly string $root,
-    ) {
-        $this->customers = new AgencyPartnerCustomers($http, $root);
-        $this->keys = new AgencyPartnerKeys($http, $root);
-        $this->terms = new AgencyPartnerTerms($http, $root);
-        $this->report = new AgencyPartnerReport($http, $root);
-    }
-
-    public function get(): mixed
-    {
-        return $this->http->request('GET', $this->root . '/partner');
-    }
-
-    /**
-     * @param array<string, mixed> $input
-     */
-    public function request(array $input = []): mixed
-    {
-        return $this->http->request('POST', $this->root . '/partner/request', ['body' => $input]);
-    }
-}
-
-final class AgencyPartnerCustomers
-{
-    public function __construct(
-        private readonly HttpClient $http,
-        private readonly string $root,
-    ) {
-    }
-
-    public function list(): mixed
-    {
-        return $this->http->request('GET', $this->root . '/partner/customers');
-    }
-
-    /**
-     * @param array<string, mixed> $input
-     */
-    public function create(array $input): mixed
-    {
-        return $this->http->request('POST', $this->root . '/partner/customers', ['body' => $input]);
-    }
-
-    public function end(string $id): mixed
-    {
-        return $this->http->request('POST', $this->root . '/partner/customers/' . Subject::segment($id) . '/end');
-    }
-
-    public function suspend(string $id): mixed
-    {
-        return $this->http->request('POST', $this->root . '/partner/customers/' . Subject::segment($id) . '/suspend');
-    }
-
-    public function restore(string $id): mixed
-    {
-        return $this->http->request('POST', $this->root . '/partner/customers/' . Subject::segment($id) . '/restore');
-    }
-}
-
-final class AgencyPartnerKeys
-{
-    public function __construct(
-        private readonly HttpClient $http,
-        private readonly string $root,
-    ) {
-    }
-
-    public function list(): mixed
-    {
-        return $this->http->request('GET', $this->root . '/partner/keys');
-    }
-
-    /**
-     * @param array<string, mixed> $input
-     */
-    public function create(array $input): mixed
-    {
-        return $this->http->request('POST', $this->root . '/partner/keys', ['body' => $input]);
-    }
-
-    public function revoke(string $id): mixed
-    {
-        return $this->http->request('POST', $this->root . '/partner/keys/' . Subject::segment($id) . '/revoke');
-    }
-}
-
-final class AgencyPartnerTerms
-{
-    public function __construct(
-        private readonly HttpClient $http,
-        private readonly string $root,
-    ) {
-    }
-
-    public function get(): mixed
-    {
-        return $this->http->request('GET', $this->root . '/partner/terms');
-    }
-}
-
-final class AgencyPartnerReport
-{
-    public function __construct(
-        private readonly HttpClient $http,
-        private readonly string $root,
-    ) {
-    }
-
-    /**
-     * @param array<string, mixed>|null $query
-     */
-    public function get(?array $query = null): mixed
-    {
-        return $this->http->request('GET', $this->root . '/partner/report', ['query' => $query]);
     }
 }

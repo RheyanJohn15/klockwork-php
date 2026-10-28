@@ -5,20 +5,41 @@ declare(strict_types=1);
 namespace Klockwork\Resources;
 
 use Klockwork\HttpClient;
+use Klockwork\PartnerCustomer;
+use Klockwork\PartnerCustomerCreated;
+use Klockwork\PartnerCustomerEnded;
+use Klockwork\PartnerMe;
+use Klockwork\PartnerPayload;
 use Klockwork\Subject;
 
+/**
+ * Partner-key surface for `/api/public/partner/*`.
+ *
+ * Use a partner `kw_` key only. Do not pass a partner key to agency, solo, or company methods.
+ * Identity comes from the hashed key row on the API. This client does not invent JWT helpers.
+ */
 final class PartnerApi
 {
     public readonly PartnerCustomers $customers;
 
     public function __construct(private readonly HttpClient $http)
     {
-        $this->customers = new PartnerCustomers($http, '/api/public/partner');
+        $root = '/api/public/partner';
+        $this->customers = new PartnerCustomers($http, $root);
     }
 
-    public function me(): mixed
+    /**
+     * Requires scope `status:read`.
+     */
+    public function me(): PartnerMe
     {
-        return $this->http->request('GET', '/api/public/partner/me');
+        $payload = PartnerPayload::requireArray(
+            $this->http->request('GET', '/api/public/partner/me'),
+            200,
+            'Invalid partner me response',
+        );
+
+        return PartnerMe::fromArray($payload);
     }
 }
 
@@ -30,21 +51,57 @@ final class PartnerCustomers
     ) {
     }
 
-    public function list(): mixed
+    /**
+     * Requires scope `customers:read`.
+     *
+     * @return list<PartnerCustomer>
+     */
+    public function list(): array
     {
-        return $this->http->request('GET', $this->root . '/customers');
+        $payload = PartnerPayload::requireArray(
+            $this->http->request('GET', $this->root . '/customers'),
+            200,
+            'Invalid partner customers response',
+        );
+
+        $customers = [];
+        foreach (PartnerPayload::listOfArrays($payload, 'customers', 200, 'Invalid partner customers response') as $item) {
+            $customers[] = PartnerCustomer::fromArray($item);
+        }
+
+        return $customers;
     }
 
     /**
-     * @param array<string, mixed> $input
+     * Requires scope `customers:write`.
      */
-    public function create(array $input): mixed
+    public function create(string $companyName, string $invoiceEmail): PartnerCustomerCreated
     {
-        return $this->http->request('POST', $this->root . '/customers', ['body' => $input]);
+        $payload = PartnerPayload::requireArray(
+            $this->http->request('POST', $this->root . '/customers', [
+                'body' => [
+                    'companyName' => $companyName,
+                    'invoiceEmail' => $invoiceEmail,
+                ],
+            ]),
+            201,
+            'Invalid partner customer create response',
+        );
+
+        return PartnerCustomerCreated::fromArray($payload);
     }
 
-    public function end(string $id): mixed
+    /**
+     * Requires scope `customers:write`. No request body.
+     */
+    public function end(string $id): PartnerCustomerEnded
     {
-        return $this->http->request('POST', $this->root . '/customers/' . Subject::segment($id) . '/end');
+        $payload = PartnerPayload::requireArray(
+            $this->http->request('POST', $this->root . '/customers/' . Subject::segment($id) . '/end'),
+            200,
+            'Invalid partner customer end response',
+        );
+
+        return PartnerCustomerEnded::fromArray($payload);
     }
 }

@@ -80,7 +80,7 @@ final class ClientTest extends TestCase
         $this->assertSame(self::KEY, $this->header($call['headers'], 'x-klockwork-key'));
         $this->assertSame('application/json', $this->header($call['headers'], 'accept'));
         $this->assertSame('application/json', $this->header($call['headers'], 'content-type'));
-        $this->assertSame('klockwork-php/0.3.0', $this->header($call['headers'], 'user-agent'));
+        $this->assertSame('klockwork-php/0.4.0', $this->header($call['headers'], 'user-agent'));
         $this->assertNull($this->header($call['headers'], 'x-klockwork-talent'));
         $this->assertNull($this->header($call['headers'], 'x-klockwork-client'));
         $this->assertIsString($call['body']);
@@ -198,7 +198,7 @@ final class ClientTest extends TestCase
     #[DataProvider('routes')]
     public function testPublicRoute(string $name, string $method, string $path, \Closure $call, ?string $expectedBody = null): void
     {
-        $mock = $this->transport($this->jsonResponse([]));
+        $mock = $this->transport($this->jsonResponse($this->routeFixture($path, $method)));
         $kw = $this->client($mock, [
             'talentId' => self::TALENT,
             'clientId' => self::CLIENT,
@@ -320,6 +320,44 @@ final class ClientTest extends TestCase
             'https://api.klockwork.org/api/public/agency/clients/a%20b%2Fc',
             $mock->calls[0]['url'],
         );
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function routeFixture(string $path, string $method): array
+    {
+        if ($path === '/api/public/partner/me') {
+            return [
+                'partnerId' => self::ID,
+                'status' => 'active',
+                'subscriptionExempt' => false,
+                'orgId' => 'org_partner',
+            ];
+        }
+        if ($path === '/api/public/partner/customers' && $method === 'GET') {
+            return ['customers' => []];
+        }
+        if ($path === '/api/public/partner/customers' && $method === 'POST') {
+            return [
+                'customer' => [
+                    'id' => self::ID,
+                    'companyName' => 'Acme',
+                    'invoiceEmail' => 'ada@acme.test',
+                    'status' => 'pending',
+                    'customerClerkOrgId' => null,
+                    'associatedAt' => null,
+                    'inviteUrl' => 'https://app.klockwork.org/partner-invites/token',
+                ],
+                'inviteUrl' => 'https://app.klockwork.org/partner-invites/token',
+                'invitationSent' => true,
+            ];
+        }
+        if (str_ends_with($path, '/end') && str_contains($path, '/api/public/partner/customers/')) {
+            return ['ok' => true];
+        }
+
+        return [];
     }
 
     private function jsonResponse(mixed $body, int $status = 200): TransportResponse
