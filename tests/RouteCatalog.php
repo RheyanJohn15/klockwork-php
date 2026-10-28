@@ -28,6 +28,10 @@ final class RouteCatalog
         $add('agency clients update', 'PATCH', "/api/public/agency/clients/{$id}", static fn (Klockwork $kw) => $kw->agency->clients->update($id, $json));
         $add('agency clients remove', 'DELETE', "/api/public/agency/clients/{$id}", static fn (Klockwork $kw) => $kw->agency->clients->remove($id));
         $add('agency clients invite', 'POST', "/api/public/agency/clients/{$id}/invite", static fn (Klockwork $kw) => $kw->agency->clients->invite($id), 'none');
+        $add('agency clients invite without email', 'POST', "/api/public/agency/clients/{$id}/invite", static fn (Klockwork $kw) => $kw->agency->clients->invite($id, [
+            'sendEmail' => false,
+        ]), '{"sendEmail":false}');
+        $add('agency clients activate', 'POST', "/api/public/agency/clients/{$id}/activate", static fn (Klockwork $kw) => $kw->agency->clients->activate($id), 'none');
         $add('agency clients revoke invite', 'POST', "/api/public/agency/clients/{$id}/invite/revoke", static fn (Klockwork $kw) => $kw->agency->clients->revokeInvite($id), 'none');
         $add('agency clients cover', 'POST', "/api/public/agency/clients/{$id}/cover", static fn (Klockwork $kw) => $kw->agency->clients->cover($id), 'none');
         $add('agency talents list', 'GET', '/api/public/agency/talents', static fn (Klockwork $kw) => $kw->agency->talents->list());

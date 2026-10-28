@@ -181,7 +181,33 @@ $kw->solo->forTalent($talentId)->placements->update($placementId, [
 
 Invoice void methods are named `voidInvoice()` because `void` is reserved in PHP.
 
-Packagist reads the version from a git tag such as `v0.5.1`, not from `composer.json`. The package summary on Packagist comes from the `description` field in `composer.json`. The package name is `klockwork/klockwork`, so the Packagist account that submits it must own the `klockwork` vendor. The user agent is `klockwork-php/` plus `Klockwork\Version::VERSION`.
+## Agency client activate and invite
+
+Admin Activate seats a client without Clerk accept. Company APIs can use `X-Klockwork-Client` with the client id until the invite is accepted.
+
+```php
+$kw->agency->clients->activate($clientId);
+
+// Public API: omitted body skips email (token/URL only)
+$kw->agency->clients->invite($clientId);
+
+// Explicit token/URL only
+$kw->agency->clients->invite($clientId, ['sendEmail' => false]);
+
+// Send branded email
+$kw->agency->clients->invite($clientId, ['sendEmail' => true]);
+```
+
+`activate()` sets `adminActivated: true` and `seatStatus: "active"`, keeps `invitationStatus: "pending"` and `inviteToken`, and leaves `clientClerkOrgId` null until Clerk accept. It is idempotent and is not `cover()`.
+
+| Platform field | Upstream |
+| --- | --- |
+| `invitation_status` | `client.invitationStatus` |
+| `invite_token_present` | boolean from `inviteToken` |
+| `activated` | `invitationStatus === "accepted"` or `adminActivated === true` |
+| `invite_available` | not accepted yet (pending invite still usable after activate) |
+
+Packagist reads the version from a git tag such as `v0.6.0`, not from `composer.json`. The package summary on Packagist comes from the `description` field in `composer.json`. The package name is `klockwork/klockwork`, so the Packagist account that submits it must own the `klockwork` vendor. The user agent is `klockwork-php/` plus `Klockwork\Version::VERSION`.
 
 ## Tests
 

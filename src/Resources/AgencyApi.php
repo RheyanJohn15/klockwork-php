@@ -122,9 +122,31 @@ final class AgencyClients
         return $this->http->request('DELETE', $this->root . '/clients/' . Subject::segment($id));
     }
 
-    public function invite(string $id): mixed
+    /**
+     * Admin Activate. Sets `adminActivated: true` and `seatStatus: "active"`.
+     * Keeps `invitationStatus: "pending"` and `inviteToken` so invite still works.
+     * Leaves `clientClerkOrgId` null until Clerk accept. Idempotent. Not the same as `cover()`.
+     */
+    public function activate(string $id): mixed
     {
-        return $this->http->request('POST', $this->root . '/clients/' . Subject::segment($id) . '/invite');
+        return $this->http->request('POST', $this->root . '/clients/' . Subject::segment($id) . '/activate');
+    }
+
+    /**
+     * Create or refresh a client invite. Public API omitted body skips email by default.
+     * Pass `['sendEmail' => false]` for token/URL only (`invitationSent: false`),
+     * or `['sendEmail' => true]` to send the branded email.
+     *
+     * @param array{sendEmail?: bool}|null $input
+     */
+    public function invite(string $id, ?array $input = null): mixed
+    {
+        $request = [];
+        if ($input !== null) {
+            $request['body'] = $input;
+        }
+
+        return $this->http->request('POST', $this->root . '/clients/' . Subject::segment($id) . '/invite', $request);
     }
 
     public function revokeInvite(string $id): mixed
