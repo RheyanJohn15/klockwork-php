@@ -13,7 +13,18 @@ final class HttpClient
         private readonly string $apiKey,
         private readonly string $baseUrl,
         private readonly mixed $transport,
+        private readonly ?string $customerId = null,
     ) {
+    }
+
+    public function withCustomer(string $customerId): self
+    {
+        $trimmed = trim($customerId);
+        if ($trimmed === '') {
+            throw new \InvalidArgumentException('customerId must be a non-empty string.');
+        }
+
+        return new self($this->apiKey, $this->baseUrl, $this->transport, $trimmed);
     }
 
     /**
@@ -33,15 +44,9 @@ final class HttpClient
             'User-Agent' => 'klockwork-php/' . Version::VERSION,
         ];
 
-        $talentId = $input['talentId'] ?? null;
-        if (is_string($talentId) && $talentId !== '') {
-            $headers['X-Klockwork-Talent'] = $talentId;
-        }
-
-        $clientId = $input['clientId'] ?? null;
-        if (is_string($clientId) && $clientId !== '') {
-            $headers['X-Klockwork-Client'] = $clientId;
-        }
+        $this->setHeaderIfNonEmptyString($headers, 'X-Klockwork-Customer', $this->customerId);
+        $this->setHeaderIfNonEmptyString($headers, 'X-Klockwork-Talent', $input['talentId'] ?? null);
+        $this->setHeaderIfNonEmptyString($headers, 'X-Klockwork-Client', $input['clientId'] ?? null);
 
         $body = null;
         if (isset($input['form'])) {
@@ -88,6 +93,16 @@ final class HttpClient
         }
 
         return $parsed;
+    }
+
+    /**
+     * @param array<string, string> $headers
+     */
+    private function setHeaderIfNonEmptyString(array &$headers, string $name, mixed $value): void
+    {
+        if (is_string($value) && $value !== '') {
+            $headers[$name] = $value;
+        }
     }
 
     /**

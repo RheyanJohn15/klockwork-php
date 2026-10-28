@@ -80,7 +80,7 @@ final class ClientTest extends TestCase
         $this->assertSame(self::KEY, $this->header($call['headers'], 'x-klockwork-key'));
         $this->assertSame('application/json', $this->header($call['headers'], 'accept'));
         $this->assertSame('application/json', $this->header($call['headers'], 'content-type'));
-        $this->assertSame('klockwork-php/0.4.0', $this->header($call['headers'], 'user-agent'));
+        $this->assertSame('klockwork-php/0.5.0', $this->header($call['headers'], 'user-agent'));
         $this->assertNull($this->header($call['headers'], 'x-klockwork-talent'));
         $this->assertNull($this->header($call['headers'], 'x-klockwork-client'));
         $this->assertIsString($call['body']);

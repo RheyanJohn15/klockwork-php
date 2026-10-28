@@ -30,6 +30,7 @@ final class Klockwork
      *     baseUrl?: string,
      *     talentId?: string,
      *     clientId?: string,
+     *     customerId?: string,
      *     transport?: callable
      * } $options
      */
@@ -42,9 +43,11 @@ final class Klockwork
         }
 
         $http = new HttpClient($apiKey, self::resolveBaseUrl($options), $transport);
-        $this->agency = new AgencyApi($http);
-        $this->solo = new SoloApi($http, self::optionalString($options['talentId'] ?? null));
-        $this->company = new CompanyApi($http, self::optionalString($options['clientId'] ?? null));
+        $productHttp = self::productHttp($http, self::optionalString($options['customerId'] ?? null, 'customerId'));
+
+        $this->agency = new AgencyApi($productHttp);
+        $this->solo = new SoloApi($productHttp, self::optionalString($options['talentId'] ?? null, 'talentId'));
+        $this->company = new CompanyApi($productHttp, self::optionalString($options['clientId'] ?? null, 'clientId'));
         $this->partner = new PartnerApi($http);
     }
 
@@ -61,15 +64,22 @@ final class Klockwork
         return rtrim($raw, '/');
     }
 
-    private static function optionalString(mixed $value): ?string
+    private static function productHttp(HttpClient $http, ?string $customerId): HttpClient
+    {
+        return $customerId !== null ? $http->withCustomer($customerId) : $http;
+    }
+
+    private static function optionalString(mixed $value, string $name): ?string
     {
         if ($value === null) {
             return null;
         }
         if (!is_string($value)) {
-            throw new \InvalidArgumentException('talentId and clientId must be strings.');
+            throw new \InvalidArgumentException($name . ' must be a string.');
         }
 
-        return $value;
+        $trimmed = trim($value);
+
+        return $trimmed === '' ? null : $trimmed;
     }
 }

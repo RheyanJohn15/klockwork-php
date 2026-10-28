@@ -13,10 +13,11 @@ use Klockwork\PartnerPayload;
 use Klockwork\Subject;
 
 /**
- * Partner-key surface for `/api/public/partner/*`.
+ * Partner-key surface for `/api/public/partner/*` and product calls as an accepted customer.
  *
- * Use a partner `kw_` key only. Do not pass a partner key to agency, solo, or company methods.
- * Identity comes from the hashed key row on the API. This client does not invent JWT helpers.
+ * Relationship methods use the partner key alone. Product calls (agency, solo, company) need
+ * `X-Klockwork-Customer` via `forCustomer()` or the constructor `customerId` option.
+ * Identity comes from the hashed key row and the customer relationship on the API.
  */
 final class PartnerApi
 {
@@ -26,6 +27,17 @@ final class PartnerApi
     {
         $root = '/api/public/partner';
         $this->customers = new PartnerCustomers($http, $root);
+    }
+
+    /**
+     * Call agency, solo, and company APIs as this accepted customer with the partner key.
+     *
+     * `$customerId` is the customer Clerk org id (`org_…`) or `partner_customers.id`.
+     * Requires `agency:*`, `solo:*`, and/or `company:read` scopes on the key.
+     */
+    public function forCustomer(string $customerId): PartnerCustomerContext
+    {
+        return new PartnerCustomerContext($this->http->withCustomer($customerId));
     }
 
     /**
@@ -40,6 +52,25 @@ final class PartnerApi
         );
 
         return PartnerMe::fromArray($payload);
+    }
+}
+
+/**
+ * Agency, solo, and company clients bound to a partner key plus `X-Klockwork-Customer`.
+ */
+final class PartnerCustomerContext
+{
+    public readonly AgencyApi $agency;
+
+    public readonly SoloApi $solo;
+
+    public readonly CompanyApi $company;
+
+    public function __construct(HttpClient $http)
+    {
+        $this->agency = new AgencyApi($http);
+        $this->solo = new SoloApi($http);
+        $this->company = new CompanyApi($http);
     }
 }
 

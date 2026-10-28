@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.0
+
+Partner customer impersonation / product parity.
+
+- Constructor `customerId` and `$kw->partner->forCustomer($id)` send `X-Klockwork-Customer` on agency, solo, and company calls with the same partner key.
+- Relationship calls (`me`, customers list/create/end) stay unbound and do not send the customer header.
+- Documented env vars `KLOCKWORK_API_KEY` and `KLOCKWORK_CUSTOMER_ORG_ID`, product scopes (`agency:*`, `solo:*`, `company:read`), and errors for missing customer header, pending customer, and wrong customer.
+
 ## 0.4.0
 
 Partner public API (`/api/public/partner`).
@@ -9,7 +17,7 @@ Partner public API (`/api/public/partner`).
 - `$kw->partner->customers->create($companyName, $invoiceEmail)` returns `PartnerCustomerCreated`.
 - `$kw->partner->customers->end($id)` returns `PartnerCustomerEnded`.
 - Removed `$kw->agency->partner`. Partnership admin is session-only under `/api/org/partner/*` and those former public agency partner paths return `404`.
-- Partner and agency keys stay separate. A partner key on agency, solo, or company returns `401`. An agency key on partner returns `401`.
+- Partner and agency keys stay separate. An agency key on partner returns `401`. A partner key needs `X-Klockwork-Customer` plus product scopes for agency, solo, and company (see 0.5.0).
 - Documented partner scopes (`status:read`, `customers:read`, `customers:write`) and common `401` / `403` / `409` / `429` errors.
 
 ## 0.3.0

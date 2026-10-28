@@ -2,9 +2,14 @@
 
 PHP client for the [Klockwork](https://klockwork.org) public API. Create an API key in the app, then record time, set placement bill rates, and manage invoices and payouts for agency, solo, company, or partner accounts.
 
-The client sends the key in `X-Klockwork-Key`. Solo calls also send `X-Klockwork-Talent`. Company calls also send `X-Klockwork-Client`. Partner calls send only the key. The API also accepts `Authorization: Bearer kw_…` when the dedicated header is absent; this client always sends `X-Klockwork-Key`.
+| Header | When |
+| --- | --- |
+| `X-Klockwork-Key` | Always (preferred). `Authorization: Bearer kw_…` is accepted by the API when this header is absent; this client always sends the dedicated header. |
+| `X-Klockwork-Customer` | Partner key on agency, solo, or company: customer Clerk org id (`org_…`) or `partner_customers.id` |
+| `X-Klockwork-Talent` | Solo only: talent under the customer org (partner) or the agency org (agency key) |
+| `X-Klockwork-Client` | Company only: client row owned by the customer org (partner) or the agency org (agency key) |
 
-An agency key and a partner key are different credentials. Create partner keys in the signed-in partner workspace. Create agency keys in agency settings. Do not pass a partner key to agency, solo, or company methods, and do not pass an agency key to `$kw->partner`. The API returns `401` when the key type does not match the surface. Partnership admin (create or revoke keys, terms, report) is session-only under `/api/org/partner/*` and is not exposed on this package. Identity comes from the hashed key row on the API; this client does not invent JWT helpers.
+An agency key and a partner key are different credentials. Create partner keys in the signed-in partner workspace. Create agency keys in agency settings. An agency key never calls `/api/public/partner/*`. A partner key calls relationship APIs under `$kw->partner`, and product APIs under agency, solo, or company only with `X-Klockwork-Customer` and the matching scopes. Partnership admin (create or revoke keys, terms, report) is session-only under `/api/org/partner/*` and is not exposed on this package. Identity comes from the hashed key row and the customer relationship on the API; this client does not invent JWT helpers.
 
 Production requests go to `https://api.klockwork.org`. Local requests go to `http://localhost:3001`.
 
@@ -36,17 +41,50 @@ $company = $kw->company->forClient('00000000-0000-4000-8000-000000000002');
 $invoices = $company->invoices->list();
 
 $partner = new Klockwork([
-    'apiKey' => getenv('KLOCKWORK_PARTNER_API_KEY'),
+    'apiKey' => getenv('KLOCKWORK_API_KEY'),
+    'customerId' => getenv('KLOCKWORK_CUSTOMER_ORG_ID'),
 ]);
 $me = $partner->partner->me();
 $customers = $partner->partner->customers->list();
 $created = $partner->partner->customers->create('Acme', 'ada@acme.test');
 $partner->partner->customers->end($created->customer->id);
+
+// Same partner key, product APIs as an accepted customer
+$partner->agency->clients->list();
+$as = $partner->partner->forCustomer(getenv('KLOCKWORK_CUSTOMER_ORG_ID'));
+$as->solo->forTalent('user_abc')->timer->session->start([
+    'clientId' => '00000000-0000-4000-8000-000000000001',
+]);
+$as->company->forClient('00000000-0000-4000-8000-000000000002')->invoices->list();
 ```
+
+Partner software typically sets:
+
+```env
+KLOCKWORK_BASE_URL=https://api.klockwork.org
+KLOCKWORK_API_KEY=kw_...
+KLOCKWORK_CUSTOMER_ORG_ID=org_...
+```
+
+Copy `KLOCKWORK_CUSTOMER_ORG_ID` from the partner Customers UI after the customer accepts (or from `PartnerCustomer::$customerClerkOrgId`). Pass it as constructor `customerId` or to `$kw->partner->forCustomer(...)`.
 
 ## Partner public API
 
-`$kw->partner` calls `/api/public/partner/*` with a partner `kw_` key. Scopes are set when the key is created. Missing scope returns `403` `{ "error": "Missing scope" }`.
+`$kw->partner` calls `/api/public/partner/*` with a partner `kw_` key. With `customerId` / `forCustomer()`, the same key calls the documented [agency](https://docs.klockwork.org/agency), [solo](https://docs.klockwork.org/solo), and [company](https://docs.klockwork.org/company) product APIs. Excluded: Slack/Teams OAuth, API key management, `/api/public/solo/public/*` share tokens, `/api/public/agency/partner/*`.
+
+### Scopes
+
+| Scope | Allows |
+| --- | --- |
+| `status:read` | `GET /api/public/partner/me` |
+| `customers:read` / `customers:write` | List / invite / end customers |
+| `agency:read` / `agency:write` | `/api/public/agency/*` as the customer |
+| `solo:read` / `solo:write` | `/api/public/solo/*` as a talent of the customer |
+| `company:read` | `/api/public/company/*` for a client of the customer |
+
+Write implies the matching read. Missing scope returns `403` `{ "error": "Missing scope" }`.
+
+### Relationship methods
 
 | Method | Path | Scope |
 | --- | --- | --- |
@@ -57,19 +95,25 @@ $partner->partner->customers->end($created->customer->id);
 
 `me()` returns `PartnerMe` (`partnerId`, `status`, `subscriptionExempt`, `orgId`). A successful call always has `status: "active"`.
 
-`customers->list()` returns a list of `PartnerCustomer` (`id`, `companyName`, `invoiceEmail`, `status`, `customerClerkOrgId`, `associatedAt`, `inviteUrl`). `inviteUrl` is present only while the invite is pending.
+`customers->list()` returns a list of `PartnerCustomer` (`id`, `companyName`, `invoiceEmail`, `status`, `customerClerkOrgId`, `associatedAt`, `inviteUrl`). `customerClerkOrgId` is required for product calls after accept. `inviteUrl` is present only while the invite is pending.
 
 `customers->create()` returns `PartnerCustomerCreated` (`customer`, `inviteUrl`, `invitationSent`). `customers->end()` returns `PartnerCustomerEnded` (`ok`).
 
+`$kw->partner->forCustomer($id)` returns agency, solo, and company clients that send `X-Klockwork-Customer`. Solo still uses `forTalent()`; company still uses `forClient()`. Pending customers (no `customerClerkOrgId`) return `403`.
+
 | Status | Typical `error` | When |
 | --- | --- | --- |
+| `400` | `X-Klockwork-Customer is required` | Product call without customer header |
 | `401` | `Invalid API key` / `Unauthorized` | Missing, unknown, revoked, or expired key; wrong key type for the surface |
 | `403` | `Missing scope` | Key lacks the route scope |
 | `403` | `Partner is not active` | Partnership is not active |
+| `403` | `This company is not an active customer of the partner` | Wrong or ended customer |
+| `403` | Customer has not accepted yet | Pending invite |
+| `403` | Talent/client not under the customer | Subject isolation |
 | `403` | `Test keys are not accepted in this environment` | Test key against live API |
 | `404` | `Partner not found` / `Customer not found` / `Not found` | Missing row, or blocked public path |
 | `409` | `An invite for this email is already open` | Duplicate open invite |
-| `429` | Rate limit / monthly cap | Partner surface only |
+| `429` | Rate limit / monthly cap | Partner keys on all surfaces |
 
 Failed responses throw `Klockwork\KlockworkError` with `status`, `error`, and `details`. Do not log the secret or its hash.
 
@@ -82,7 +126,7 @@ $kw = new Klockwork([
 ]);
 ```
 
-`baseUrl` overrides `environment` when you need another host. You can also set a default `talentId` or `clientId` on the constructor and override either value on a single call.
+`baseUrl` overrides `environment` when you need another host. You can also set a default `talentId`, `clientId`, or `customerId` on the constructor and override talent or client on a single call.
 
 Agency, solo, and company requests and responses are JSON arrays with the API's camelCase keys. Partner methods return typed DTOs. Failed responses throw `Klockwork\KlockworkError` with `status`, `error`, and `details`.
 
@@ -137,7 +181,7 @@ $kw->solo->forTalent($talentId)->placements->update($placementId, [
 
 Invoice void methods are named `voidInvoice()` because `void` is reserved in PHP.
 
-Packagist reads the version from a git tag such as `v0.4.0`, not from `composer.json`. The package summary on Packagist comes from the `description` field in `composer.json`. The package name is `klockwork/klockwork`, so the Packagist account that submits it must own the `klockwork` vendor. The user agent is `klockwork-php/` plus `Klockwork\Version::VERSION`.
+Packagist reads the version from a git tag such as `v0.5.0`, not from `composer.json`. The package summary on Packagist comes from the `description` field in `composer.json`. The package name is `klockwork/klockwork`, so the Packagist account that submits it must own the `klockwork` vendor. The user agent is `klockwork-php/` plus `Klockwork\Version::VERSION`.
 
 ## Tests
 
