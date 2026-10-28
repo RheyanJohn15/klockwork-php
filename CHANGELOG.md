@@ -2,6 +2,8 @@
 
 ## 0.2.0
 
+Production requests go to `https://api.klockwork.org`.
+
 Company clients no longer have one required hourly rate for every talent. Bill rates are per placement, with an optional client default. This is a breaking change for callers that treated agency client `hourlyRate` as a required number.
 
 - Agency client `hourlyRate`, `hoursPerDay`, `shiftStart`, `shiftEnd`, and `timezone` are nullable. `useClientDefaults` is new and defaults to `false` on create. `currency` stays required.

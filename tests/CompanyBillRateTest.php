@@ -108,7 +108,7 @@ final class CompanyBillRateTest extends TestCase
             $mock->calls[2]['method'],
         );
         $this->assertSame(
-            'https://klockwork.org/api/public/agency/assignments/' . self::ASSIGNMENT,
+            'https://api.klockwork.org/api/public/agency/assignments/' . self::ASSIGNMENT,
             $mock->calls[2]['url'],
         );
         $this->assertSame('{"hourlyRate":null}', $mock->calls[2]['body']);
@@ -132,7 +132,7 @@ final class CompanyBillRateTest extends TestCase
         $call = $mock->calls[0];
         $this->assertSame('PATCH', $call['method']);
         $this->assertSame(
-            'https://klockwork.org/api/public/solo/placements/' . self::ASSIGNMENT,
+            'https://api.klockwork.org/api/public/solo/placements/' . self::ASSIGNMENT,
             $call['url'],
         );
         $this->assertSame(self::TALENT, $this->header($call['headers'], 'x-klockwork-talent'));

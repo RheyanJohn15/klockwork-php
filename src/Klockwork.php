@@ -11,7 +11,7 @@ use Klockwork\Resources\SoloApi;
 
 final class Klockwork
 {
-    public const PRODUCTION_BASE_URL = 'https://klockwork.org';
+    public const PRODUCTION_BASE_URL = 'https://api.klockwork.org';
 
     public const LOCAL_BASE_URL = 'http://localhost:3001';
 

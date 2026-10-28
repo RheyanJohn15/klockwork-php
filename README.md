@@ -6,7 +6,7 @@ The client sends the key in `X-Klockwork-Key`. Solo calls also send `X-Klockwork
 
 An agency key and a partner key are different credentials. The API rejects a partner key on agency, solo, and company routes, and it rejects an agency key on partner routes. Partnership administration for an agency key is `$kw->agency->partner`. Customer calls for a partner key are `$kw->partner`.
 
-Production requests go to `https://klockwork.org`. Local requests go to `http://localhost:3001`.
+Production requests go to `https://api.klockwork.org`. Local requests go to `http://localhost:3001`.
 
 ## Install
 

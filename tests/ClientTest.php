@@ -37,7 +37,7 @@ final class ClientTest extends TestCase
         $prod = $this->transport($this->jsonResponse(['clients' => []]));
         $this->client($prod)->agency->clients->list();
         $this->assertSame(
-            'https://klockwork.org/api/public/agency/clients',
+            'https://api.klockwork.org/api/public/agency/clients',
             $prod->calls[0]['url'],
         );
 
@@ -99,13 +99,13 @@ final class ClientTest extends TestCase
         $this->assertSame('user_default', $this->header($mock->calls[0]['headers'], 'x-klockwork-talent'));
         $this->assertSame(self::TALENT, $this->header($mock->calls[1]['headers'], 'x-klockwork-talent'));
         $this->assertSame(
-            'https://klockwork.org/api/public/solo/clients?status=all',
+            'https://api.klockwork.org/api/public/solo/clients?status=all',
             $mock->calls[1]['url'],
         );
         $this->assertSame('user_call', $this->header($mock->calls[2]['headers'], 'x-klockwork-talent'));
         $this->assertSame(self::KEY, $this->header($mock->calls[2]['headers'], 'x-klockwork-key'));
         $this->assertSame(
-            'https://klockwork.org/api/public/solo/clients?status=archived',
+            'https://api.klockwork.org/api/public/solo/clients?status=archived',
             $mock->calls[2]['url'],
         );
     }
@@ -135,7 +135,7 @@ final class ClientTest extends TestCase
         $this->assertSame(self::CLIENT, $this->header($call['headers'], 'x-klockwork-client'));
         $this->assertSame(self::KEY, $this->header($call['headers'], 'x-klockwork-key'));
         $this->assertSame(
-            'https://klockwork.org/api/public/company/time?from=2026-01-01&to=2026-02-01',
+            'https://api.klockwork.org/api/public/company/time?from=2026-01-01&to=2026-02-01',
             $call['url'],
         );
     }
@@ -152,7 +152,7 @@ final class ClientTest extends TestCase
         $call = $mock->calls[0];
         $this->assertSame('POST', $call['method']);
         $this->assertSame(
-            'https://klockwork.org/api/public/solo/payments/' . self::ID . '/attachments',
+            'https://api.klockwork.org/api/public/solo/payments/' . self::ID . '/attachments',
             $call['url'],
         );
         $this->assertNull($this->header($call['headers'], 'content-type'));
@@ -207,7 +207,7 @@ final class ClientTest extends TestCase
 
         $httpCall = $mock->calls[0];
         $this->assertSame($method, $httpCall['method']);
-        $this->assertSame('https://klockwork.org' . $path, $httpCall['url']);
+        $this->assertSame('https://api.klockwork.org' . $path, $httpCall['url']);
         if (str_starts_with($path, '/api/public/solo')) {
             $this->assertSame(self::TALENT, $this->header($httpCall['headers'], 'x-klockwork-talent'));
         } else {
@@ -272,7 +272,7 @@ final class ClientTest extends TestCase
         $call = $mock->calls[0];
         $this->assertSame('00000000-0000-4000-8000-000000000099', $this->header($call['headers'], 'x-klockwork-client'));
         $this->assertSame(
-            'https://klockwork.org/api/public/company/time?from=2026-01-01&to=2026-02-01',
+            'https://api.klockwork.org/api/public/company/time?from=2026-01-01&to=2026-02-01',
             $call['url'],
         );
     }
@@ -307,7 +307,7 @@ final class ClientTest extends TestCase
         $mock = $this->transport($this->jsonResponse(['clients' => []]));
         $this->client($mock)->agency->clients->list(['status' => null, 'q' => 'acme']);
         $this->assertSame(
-            'https://klockwork.org/api/public/agency/clients?q=acme',
+            'https://api.klockwork.org/api/public/agency/clients?q=acme',
             $mock->calls[0]['url'],
         );
     }
@@ -317,7 +317,7 @@ final class ClientTest extends TestCase
         $mock = $this->transport($this->jsonResponse(['client' => []]));
         $this->client($mock)->agency->clients->get('a b/c');
         $this->assertSame(
-            'https://klockwork.org/api/public/agency/clients/a%20b%2Fc',
+            'https://api.klockwork.org/api/public/agency/clients/a%20b%2Fc',
             $mock->calls[0]['url'],
         );
     }
