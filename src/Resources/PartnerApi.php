@@ -13,11 +13,14 @@ use Klockwork\PartnerPayload;
 use Klockwork\Subject;
 
 /**
- * Partner-key surface for `/api/public/partner/*` and product calls as an accepted customer.
+ * Partner-key surface for `/api/public/partner/*` and product calls via `X-Klockwork-Customer`.
  *
  * Relationship methods use the partner key alone. Product calls (agency, solo, company) need
  * `X-Klockwork-Customer` via `forCustomer()` or the constructor `customerId` option.
- * Identity comes from the hashed key row and the customer relationship on the API.
+ * For white-label, that value is usually the partner company's own Clerk org id (`PartnerMe::$orgId`
+ * / Partnership → Status). You may also send an accepted covered customer's org id or
+ * `partner_customers.id` when operating that customer's book.
+ * Identity comes from the hashed key row and the org (or customer relationship) on the API.
  */
 final class PartnerApi
 {
@@ -30,9 +33,11 @@ final class PartnerApi
     }
 
     /**
-     * Call agency, solo, and company APIs as this accepted customer with the partner key.
+     * Call agency, solo, and company APIs with the partner key plus `X-Klockwork-Customer`.
      *
-     * `$customerId` is the customer Clerk org id (`org_…`) or `partner_customers.id`.
+     * `$customerId` is usually the partner company's own Clerk org id (`PartnerMe::$orgId` /
+     * Partnership → Status “Company org id”). You may also pass an accepted covered customer's
+     * Clerk org id (`org_…`) or `partner_customers.id`.
      * Requires `agency:*`, `solo:*`, and/or `company:read` scopes on the key.
      */
     public function forCustomer(string $customerId): PartnerCustomerContext

@@ -5,11 +5,11 @@ PHP client for the [Klockwork](https://klockwork.org) public API. Create an API 
 | Header | When |
 | --- | --- |
 | `X-Klockwork-Key` | Always (preferred). `Authorization: Bearer kw_…` is accepted by the API when this header is absent; this client always sends the dedicated header. |
-| `X-Klockwork-Customer` | Partner key on agency, solo, or company: customer Clerk org id (`org_…`) or `partner_customers.id` |
-| `X-Klockwork-Talent` | Solo only: talent under the customer org (partner) or the agency org (agency key) |
-| `X-Klockwork-Client` | Company only: client row owned by the customer org (partner) or the agency org (agency key) |
+| `X-Klockwork-Customer` | Partner key on agency, solo, or company: **partner company** Clerk org id from Partnership → Status, or an accepted covered customer's org id / `partner_customers.id` |
+| `X-Klockwork-Talent` | Solo only: talent under the org named in `X-Klockwork-Customer` |
+| `X-Klockwork-Client` | Company only: client row owned by that org |
 
-An agency key and a partner key are different credentials. Create partner keys in the signed-in partner workspace. Create agency keys in agency settings. An agency key never calls `/api/public/partner/*`. A partner key calls relationship APIs under `$kw->partner`, and product APIs under agency, solo, or company only with `X-Klockwork-Customer` and the matching scopes. Partnership admin (create or revoke keys, terms, report) is session-only under `/api/org/partner/*` and is not exposed on this package. Identity comes from the hashed key row and the customer relationship on the API; this client does not invent JWT helpers.
+An agency key and a partner key are different credentials. Create partner keys in the signed-in partner workspace. Create agency keys in agency settings. An agency key never calls `/api/public/partner/*`. A partner key calls relationship APIs under `$kw->partner`, and product APIs under agency, solo, or company only with `X-Klockwork-Customer` and the matching scopes. Partnership admin (create or revoke keys, terms, report) is session-only under `/api/org/partner/*` and is not exposed on this package. Identity comes from the hashed key row and the org (or customer relationship) on the API; this client does not invent JWT helpers.
 
 Production requests go to `https://api.klockwork.org`. Local requests go to `http://localhost:3001`.
 
@@ -49,9 +49,9 @@ $customers = $partner->partner->customers->list();
 $created = $partner->partner->customers->create('Acme', 'ada@acme.test');
 $partner->partner->customers->end($created->customer->id);
 
-// Same partner key, product APIs as an accepted customer
+// Same partner key, product APIs as the partner company (or a covered customer)
 $partner->agency->clients->list();
-$as = $partner->partner->forCustomer(getenv('KLOCKWORK_CUSTOMER_ORG_ID'));
+$as = $partner->partner->forCustomer($me->orgId);
 $as->solo->forTalent('user_abc')->timer->session->start([
     'clientId' => '00000000-0000-4000-8000-000000000001',
 ]);
@@ -66,7 +66,7 @@ KLOCKWORK_API_KEY=kw_...
 KLOCKWORK_CUSTOMER_ORG_ID=org_...
 ```
 
-Copy `KLOCKWORK_CUSTOMER_ORG_ID` from the partner Customers UI after the customer accepts (or from `PartnerCustomer::$customerClerkOrgId`). Pass it as constructor `customerId` or to `$kw->partner->forCustomer(...)`.
+Copy `KLOCKWORK_CUSTOMER_ORG_ID` from Partnership → Status (“Company org id”). That is the partner owner workspace — not an invited covered customer. It matches `PartnerMe::$orgId` from `$kw->partner->me()`. When operating an accepted covered customer's book instead, use that customer's `customerClerkOrgId` or `partner_customers.id`. Pass it as constructor `customerId` or to `$kw->partner->forCustomer(...)`.
 
 ## Partner public API
 
@@ -93,13 +93,13 @@ Write implies the matching read. Missing scope returns `403` `{ "error": "Missin
 | `$kw->partner->customers->create($companyName, $invoiceEmail)` | `POST /api/public/partner/customers` | `customers:write` |
 | `$kw->partner->customers->end($id)` | `POST /api/public/partner/customers/{id}/end` | `customers:write` |
 
-`me()` returns `PartnerMe` (`partnerId`, `status`, `subscriptionExempt`, `orgId`). A successful call always has `status: "active"`.
+`me()` returns `PartnerMe` (`partnerId`, `status`, `subscriptionExempt`, `orgId`). A successful call always has `status: "active"`. `orgId` is the partner company's Clerk org id — the usual white-label value for `X-Klockwork-Customer`.
 
-`customers->list()` returns a list of `PartnerCustomer` (`id`, `companyName`, `invoiceEmail`, `status`, `customerClerkOrgId`, `associatedAt`, `inviteUrl`). `customerClerkOrgId` is required for product calls after accept. `inviteUrl` is present only while the invite is pending.
+`customers->list()` returns a list of `PartnerCustomer` (`id`, `companyName`, `invoiceEmail`, `status`, `customerClerkOrgId`, `associatedAt`, `inviteUrl`). Use `customerClerkOrgId` when product calls should target that covered customer after accept. `inviteUrl` is present only while the invite is pending.
 
 `customers->create()` returns `PartnerCustomerCreated` (`customer`, `inviteUrl`, `invitationSent`). `customers->end()` returns `PartnerCustomerEnded` (`ok`).
 
-`$kw->partner->forCustomer($id)` returns agency, solo, and company clients that send `X-Klockwork-Customer`. Solo still uses `forTalent()`; company still uses `forClient()`. Pending customers (no `customerClerkOrgId`) return `403`.
+`$kw->partner->forCustomer($id)` returns agency, solo, and company clients that send `X-Klockwork-Customer`. Solo still uses `forTalent()`; company still uses `forClient()`. Pending covered customers (no `customerClerkOrgId`) return `403` when you target them.
 
 | Status | Typical `error` | When |
 | --- | --- | --- |
@@ -181,7 +181,7 @@ $kw->solo->forTalent($talentId)->placements->update($placementId, [
 
 Invoice void methods are named `voidInvoice()` because `void` is reserved in PHP.
 
-Packagist reads the version from a git tag such as `v0.5.0`, not from `composer.json`. The package summary on Packagist comes from the `description` field in `composer.json`. The package name is `klockwork/klockwork`, so the Packagist account that submits it must own the `klockwork` vendor. The user agent is `klockwork-php/` plus `Klockwork\Version::VERSION`.
+Packagist reads the version from a git tag such as `v0.5.1`, not from `composer.json`. The package summary on Packagist comes from the `description` field in `composer.json`. The package name is `klockwork/klockwork`, so the Packagist account that submits it must own the `klockwork` vendor. The user agent is `klockwork-php/` plus `Klockwork\Version::VERSION`.
 
 ## Tests
 

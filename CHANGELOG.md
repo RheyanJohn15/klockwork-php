@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.1
+
+Clarify that `KLOCKWORK_CUSTOMER_ORG_ID` / `X-Klockwork-Customer` for white-label is the partner company's own Clerk org id from Partnership → Status (`PartnerMe::$orgId`), not an invited covered customer. Covered customer org ids remain valid when operating that customer's book.
+
 ## 0.5.0
 
 Partner customer impersonation / product parity.

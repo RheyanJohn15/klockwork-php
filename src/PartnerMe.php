@@ -10,6 +10,7 @@ final class PartnerMe
         public readonly string $partnerId,
         public readonly string $status,
         public readonly bool $subscriptionExempt,
+        /** Partner company Clerk org id (`org_…`). Use as `customerId` / `X-Klockwork-Customer` for white-label product calls. */
         public readonly string $orgId,
     ) {
     }
