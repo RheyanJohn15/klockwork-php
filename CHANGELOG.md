@@ -1,8 +1,10 @@
 # Changelog
 
-## 0.2.0
+## 0.3.0
 
-Production requests go to `https://api.klockwork.org`.
+Production requests use `https://api.klockwork.org`. Earlier releases sent them to `https://klockwork.org`.
+
+## 0.2.0
 
 Company clients no longer have one required hourly rate for every talent. Bill rates are per placement, with an optional client default. This is a breaking change for callers that treated agency client `hourlyRate` as a required number.
 

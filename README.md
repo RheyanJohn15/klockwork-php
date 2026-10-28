@@ -1,6 +1,6 @@
 # klockwork
 
-Client for the [Klockwork](https://klockwork.org) public API. Create an API key in the app, then call agency, solo, company, or partner routes from another service.
+PHP client for the [Klockwork](https://klockwork.org) public API. Create an API key in the app, then record time, set placement bill rates, and manage invoices and payouts for agency, solo, company, or partner accounts.
 
 The client sends the key in `X-Klockwork-Key`. Solo calls also send `X-Klockwork-Talent`. Company calls also send `X-Klockwork-Client`. Partner calls send only the key.
 
@@ -109,7 +109,7 @@ $kw->solo->forTalent($talentId)->placements->update($placementId, [
 
 Invoice void methods are named `voidInvoice()` because `void` is reserved in PHP.
 
-Packagist reads the version from a git tag such as `v0.2.0`, not from `composer.json`. The package name is `klockwork/klockwork`, so the Packagist account that submits it must own the `klockwork` vendor. The user agent is `klockwork-php/` plus `Klockwork\Version::VERSION`.
+Packagist reads the version from a git tag such as `v0.3.0`, not from `composer.json`. The package summary on Packagist comes from the `description` field in `composer.json`. The package name is `klockwork/klockwork`, so the Packagist account that submits it must own the `klockwork` vendor. The user agent is `klockwork-php/` plus `Klockwork\Version::VERSION`.
 
 ## Tests
 

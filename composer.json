@@ -1,12 +1,15 @@
 {
     "name": "klockwork/klockwork",
-    "description": "Client for the Klockwork public API",
+    "description": "PHP client for the Klockwork public API. Record time, set placement bill rates, and manage invoices and payouts for agency, solo, company, and partner accounts.",
     "license": "MIT",
     "type": "library",
     "keywords": [
         "klockwork",
         "time-tracking",
-        "api-client"
+        "api-client",
+        "invoices",
+        "placements",
+        "agency"
     ],
     "homepage": "https://klockwork.org",
     "authors": [
